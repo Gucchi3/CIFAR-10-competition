@@ -38,6 +38,10 @@ train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True )
 valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 
+
+
+
+
 # model
 model = nn.Sequential(
     nn.Conv2d(3, 24, kernel_size=3, stride=1, padding=1),
@@ -76,6 +80,9 @@ for epoch in range(train_epochs):
 
     avg_loss = total_loss / len(train_loader)
     print(f"epoch {epoch + 1}: loss {avg_loss:.4f}")
+
+
+
 
 
 
