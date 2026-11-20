@@ -44,16 +44,9 @@ valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # model
 model = nn.Sequential(
-    nn.Conv2d(3, 24, kernel_size=3, stride=1, padding=1),
-    nn.BatchNorm2d(24),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
-    nn.Conv2d(24, 48, kernel_size=3, stride=1, padding=1),
-    nn.BatchNorm2d(48),
-    nn.ReLU(),
-    nn.MaxPool2d(2),
+
     nn.Flatten(),
-    nn.Linear(48 * 8 * 8, 10),
+    nn.Linear( *  * , 10),
 ).to(device)
 
 # 学習設定
