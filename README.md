@@ -31,26 +31,26 @@ model = nn.Sequential(
     nn.BatchNorm2d(28),
     nn.ReLU(),
 
-    DepthwiseSeparableConv(28, 28),
+    DConv2d(28, 28),
     nn.BatchNorm2d(28), 
     nn.ReLU(),
     nn.MaxPool2d(2), # 32x32 -> 16x16
-    DepthwiseSeparableConv(28, 56), 
+    DConv2d(28, 56), 
     nn.BatchNorm2d(56), 
     nn.ReLU(),
 
-    DepthwiseSeparableConv(56, 56), 
+    DConv2d(56, 56), 
     nn.BatchNorm2d(56), 
     nn.ReLU(),
     nn.MaxPool2d(2), # 16x16 -> 8x8
-    DepthwiseSeparableConv(56, 72), 
+    DConv2d(56, 72), 
     nn.BatchNorm2d(72), 
     nn.ReLU(),
-    DepthwiseSeparableConv(72, 72), 
+    DConv2d(72, 72), 
     nn.BatchNorm2d(72), 
     nn.ReLU(),
 
-    SelfAttention(72),
+    SAttention(72),
 
     nn.AdaptiveAvgPool2d(1), 
     nn.Flatten(), 

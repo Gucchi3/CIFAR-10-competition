@@ -11,6 +11,10 @@ y_{c,i,j} = b_c + \sum_{k} \sum_{m,n} W_{c,k,m,n} \, x_{k,\,i+m,\,j+n}
 $$
 
 ```python
+nn.Conv2d(in_channels=12, out_channels=24, kernel_size=3, stride=1, padding=1)
+```
+
+```python
 nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 ```
 
@@ -27,7 +31,11 @@ $$
 $$
 
 ```python
-class ResidualBlock(nn.Module):
+RBlock(channels=24)
+```
+
+```python
+class RBlock(nn.Module):
 
     def __init__(self, channels):
         super().__init__()
@@ -49,6 +57,10 @@ class ResidualBlock(nn.Module):
 $$
 y = x + W_2 \, \mathrm{GELU}\left(W_1 \, \mathrm{Norm}\left(\mathrm{DWConv}_{7 \times 7}(x)\right)\right)
 $$
+
+```python
+ConvNeXtBlock(channels=24, expand=4, k=7)
+```
 
 ```python
 class ConvNeXtBlock(nn.Module):
@@ -79,7 +91,11 @@ y = W_{\mathrm{pw}} * \mathrm{DWConv}_{3 \times 3}(x)
 $$
 
 ```python
-class DepthwiseSeparableConv(nn.Module):
+DConv2d(in_channels=12, out_channels=24)
+```
+
+```python
+class DConv2d(nn.Module):
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -97,6 +113,10 @@ class DepthwiseSeparableConv(nn.Module):
 $$
 s = \sigma\left(W_2 \, \mathrm{ReLU}\left(W_1 \, \mathrm{GAP}(x)\right)\right), \quad y = s \odot x
 $$
+
+```python
+SEBlock(channels=24, reduction=4)
+```
 
 ```python
 class SEBlock(nn.Module):
@@ -128,7 +148,11 @@ $$
 $$
 
 ```python
-class SelfAttention(nn.Module):
+SAttention(channels=24)
+```
+
+```python
+class SAttention(nn.Module):
 
     def __init__(self, channels):
         super().__init__()
@@ -158,7 +182,11 @@ y = x + \mathrm{merge}\left(\left\{\mathrm{softmax}\left(\frac{Q_w K_w^\top}{\sq
 $$
 
 ```python
-class WindowAttention(nn.Module):
+WAttention(channels=24, window_size=4)
+```
+
+```python
+class WAttention(nn.Module):
 
     def __init__(self, channels, window_size=4):
         super().__init__()
@@ -235,6 +263,10 @@ y_{c,i,j} = \max_{0 \le m,n < 2} x_{c,\,2i+m,\,2j+n}
 $$
 
 ```python
+nn.MaxPool2d(kernel_size=2, stride=2)
+```
+
+```python
 nn.MaxPool2d(2)
 ```
 
@@ -245,6 +277,10 @@ nn.MaxPool2d(2)
 $$
 y_c = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} x_{c,i,j}
 $$
+
+```python
+nn.AdaptiveAvgPool2d(output_size=1)
+```
 
 ```python
 nn.AdaptiveAvgPool2d(1)
@@ -261,6 +297,10 @@ $$
 $$
 
 ```python
+nn.BatchNorm2d(num_features=24)
+```
+
+```python
 nn.BatchNorm2d(channels)
 ```
 
@@ -271,6 +311,10 @@ nn.BatchNorm2d(channels)
 $$
 \mathrm{LN}(x) = \gamma \cdot \frac{x - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta
 $$
+
+```python
+nn.GroupNorm(num_groups=1, num_channels=24)
+```
 
 ```python
 nn.GroupNorm(1, channels)
@@ -285,6 +329,11 @@ nn.GroupNorm(1, channels)
 $$
 y = W \, \mathrm{vec}(x) + b
 $$
+
+```python
+nn.Flatten(start_dim=1)
+nn.Linear(in_features=24, out_features=10)
+```
 
 ```python
 nn.Flatten(),
@@ -314,6 +363,10 @@ v_t = \mu v_{t-1} + g_t, \quad \theta_t = \theta_{t-1} - \eta v_t
 $$
 
 ```python
+build_module_optimizer(name="sgd", model=model)
+```
+
+```python
 optimizer = torch.optim.SGD(model.parameters(), lr=0.05, momentum=0.9)
 ```
 
@@ -330,6 +383,10 @@ $$
 $$
 
 ```python
+build_module_optimizer(name="adam", model=model)
+```
+
+```python
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 ```
 
@@ -342,6 +399,10 @@ $$
 $$
 
 ```python
+build_module_optimizer(name="adamw", model=model)
+```
+
+```python
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.05)
 ```
 
@@ -352,6 +413,10 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.05)
 $$
 M_t = \mu M_{t-1} + G_t, \quad \theta_t = \theta_{t-1} - \eta \, \mathrm{NewtonSchulz}(G_t + \mu M_t)
 $$
+
+```python
+build_module_optimizer(name="muon", model=model)
+```
 
 ```python
 def newton_schulz(G, steps=5):

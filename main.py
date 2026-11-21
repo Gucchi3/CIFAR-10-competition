@@ -1,14 +1,14 @@
 from datasets         import load_dataset
 from torch.utils.data import DataLoader, TensorDataset, random_split
+from rich             import print as rprint
 from torchvision      import transforms
 from torch.utils.flop_counter import FlopCounterMode
 
 import os
-import time
 import torch
 import torch.nn as nn
 
-from module import ConvNeXtBlock, DepthwiseSeparableConv, ResidualBlock, SEBlock, SelfAttention, WindowAttention, build_module_optimizer
+from module import ConvNeXtBlock, DConv2d, RBlock, SEBlock, SAttention, WAttention, build_module_optimizer
 
 # 前処理済みデータの保存先
 CACHE_PATH = "./cifar10_train.pt"
@@ -47,40 +47,50 @@ valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # model
 model = nn.Sequential(
-    nn.Conv2d(3, 16, kernel_size=3, padding=1),
-    nn.BatchNorm2d(16),
+    nn.Conv2d(3, 64, kernel_size=3, padding=1),
+    nn.BatchNorm2d(64),
     nn.ReLU(),
-    nn.MaxPool2d(2), # 32x32 -> 16x16
-
-    nn.Conv2d(16, 32, kernel_size=3, padding=1),
-    nn.BatchNorm2d(32),
+    nn.Conv2d(64, 64, kernel_size=3, padding=1),
+    nn.BatchNorm2d(64),
     nn.ReLU(),
-
-    nn.Conv2d(32, 32, kernel_size=3, padding=1),
-    nn.BatchNorm2d(32),
+    nn.MaxPool2d(2),
+    SAttention(64),
+    nn.Conv2d(64, 128, kernel_size=3, padding=1),
+    nn.BatchNorm2d(128),
     nn.ReLU(),
-    nn.MaxPool2d(2), # 16x16 -> 8x8
-
-    nn.Conv2d(32, 48, kernel_size=3, padding=1),
-    nn.BatchNorm2d(48),
+    SAttention(128),
+    nn.Conv2d(128, 128, kernel_size=3, padding=1),
+    nn.BatchNorm2d(128),
     nn.ReLU(),
-
-    SelfAttention(48),
-
-    nn.AdaptiveAvgPool2d(1),
+    nn.MaxPool2d(2),
     nn.Flatten(),
-    nn.Linear(48*1*1, 10),
+    nn.Linear(128 * 8 * 8, 10),
 ).to(device)
 
+
+
+
 # 学習設定
-train_epochs = 30
+train_epochs = 50
 criterion    = nn.CrossEntropyLoss()
-optimizers   = build_module_optimizer("adam", model)
+optimizers   = build_module_optimizer("muon", model)
 
 
 
 
 
+# モデル情報　※変更禁止
+num_params = sum(p.numel() for p in model.parameters())
+print(f"Params: {num_params:,} / 40,000")
+x = torch.randn(1, 3, 32, 32, device=device)
+with FlopCounterMode(display=False) as counter:
+    model(x)
+macs = counter.get_total_flops() // 2
+print(f"MACs: {macs:,} / 8,000,000")
+if num_params > 40_000:
+    rprint("[red]パラメータ数が上限を超えています[/red]")
+if macs > 8000000:
+    rprint("[red]計算量が上限を超えています[/red]")
 
 
 
@@ -123,17 +133,5 @@ with torch.inference_mode():
         predictions = outputs.argmax(dim=1)
         correct    += (predictions == labels).sum().item()
         total      += labels.size(0)
-
-num_params = sum(p.numel() for p in model.parameters())
-print(f"Params: {num_params:,} / 40,000")
-if num_params > 40_000:
-    print("パラメータ数が上限を超えています")
-x = torch.randn(1, 3, 32, 32, device=device)
-with FlopCounterMode(display=False) as counter:
-    model(x)
-macs = counter.get_total_flops() // 2
-print(f"MACs: {macs:,} / 6M")
 accuracy = 100 * correct / total
-if macs > 6000000:
-    print("計算量が上限を超えています")
 print(f"Valid accuracy: {accuracy:.2f}%")

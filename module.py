@@ -9,7 +9,7 @@ import torch
 
 
 
-class DepthwiseSeparableConv(nn.Module):
+class DConv2d(nn.Module):
     '''
     #* チャネルごとの3x3畳み込みと1x1畳み込みを続けて行う。
     '''
@@ -24,7 +24,7 @@ class DepthwiseSeparableConv(nn.Module):
         return self.pointwise(self.depthwise(x))
 
 
-class ResidualBlock(nn.Module):
+class RBlock(nn.Module):
     '''
     #* 3x3畳み込み2回の結果を入力に足す。
     '''
@@ -79,7 +79,7 @@ class SEBlock(nn.Module):
         return x * self.fc(x).view(x.size(0), -1, 1, 1)
 
 
-class SelfAttention(nn.Module):
+class SAttention(nn.Module):
     '''
     #* 画像全体の位置どうしでattentionを計算し、入力に足す。
     '''
@@ -101,7 +101,7 @@ class SelfAttention(nn.Module):
         return x + out
 
 
-class WindowAttention(nn.Module):
+class WAttention(nn.Module):
     '''
     #* 画像を window_size 四方の窓に分け、窓の中だけでattentionを計算する。
     #! 縦横の大きさは window_size で割り切れること。
