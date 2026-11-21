@@ -1,11 +1,14 @@
 from datasets         import load_dataset
 from torch.utils.data import DataLoader, TensorDataset, random_split
 from torchvision      import transforms
+from torch.utils.flop_counter import FlopCounterMode
 
 import os
 import time
 import torch
 import torch.nn as nn
+
+from module import ConvNeXtBlock, DepthwiseSeparableConv, ResidualBlock, SEBlock, SelfAttention, WindowAttention, build_module_optimizer
 
 # 前処理済みデータの保存先
 CACHE_PATH = "./cifar10_train.pt"
@@ -44,17 +47,44 @@ valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # model
 model = nn.Sequential(
+    nn.Conv2d(3, 16, kernel_size=3, padding=1),
+    nn.BatchNorm2d(16),
+    nn.ReLU(),
+    nn.MaxPool2d(2), # 32x32 -> 16x16
 
+    nn.Conv2d(16, 32, kernel_size=3, padding=1),
+    nn.BatchNorm2d(32),
+    nn.ReLU(),
+
+    nn.Conv2d(32, 32, kernel_size=3, padding=1),
+    nn.BatchNorm2d(32),
+    nn.ReLU(),
+    nn.MaxPool2d(2), # 16x16 -> 8x8
+
+    nn.Conv2d(32, 48, kernel_size=3, padding=1),
+    nn.BatchNorm2d(48),
+    nn.ReLU(),
+
+    SelfAttention(48),
+
+    nn.AdaptiveAvgPool2d(1),
     nn.Flatten(),
-    nn.Linear( *  * , 10),
+    nn.Linear(48*1*1, 10),
 ).to(device)
 
 # 学習設定
 train_epochs = 30
 criterion    = nn.CrossEntropyLoss()
-optimizer    = torch.optim.Adam(model.parameters())
+optimizers   = build_module_optimizer("adam", model)
 
-# 学習
+
+
+
+
+
+
+
+# 学習　※変更禁止
 for epoch in range(train_epochs):
     model.train()
     total_loss = 0.0
@@ -63,11 +93,11 @@ for epoch in range(train_epochs):
         images = images.to(device)
         labels = labels.to(device)
 
-        optimizer.zero_grad()
+        for opt in optimizers: opt.zero_grad()
         outputs = model(images)
         loss    = criterion(outputs, labels)
         loss.backward()
-        optimizer.step()
+        for opt in optimizers: opt.step()
 
         total_loss += loss.item()
 
@@ -94,5 +124,16 @@ with torch.inference_mode():
         correct    += (predictions == labels).sum().item()
         total      += labels.size(0)
 
+num_params = sum(p.numel() for p in model.parameters())
+print(f"Params: {num_params:,} / 40,000")
+if num_params > 40_000:
+    print("パラメータ数が上限を超えています")
+x = torch.randn(1, 3, 32, 32, device=device)
+with FlopCounterMode(display=False) as counter:
+    model(x)
+macs = counter.get_total_flops() // 2
+print(f"MACs: {macs:,} / 6M")
 accuracy = 100 * correct / total
+if macs > 6000000:
+    print("計算量が上限を超えています")
 print(f"Valid accuracy: {accuracy:.2f}%")
