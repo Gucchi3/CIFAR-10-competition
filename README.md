@@ -65,7 +65,10 @@ model = nn.Sequential(
 train_epochs = 50
 criterion    = nn.CrossEntropyLoss()
 optimizers   = build_module_optimizer("muon", model)
+schedulers   = build_module_scheduler("none", optimizers, train_epochs)
 ```
 
 オプティマイザは `build_module_optimizer` に渡す名前で切り替わります。使える名前は `"adam"`、`"adamw"`、`"sgd"`、`"muon"` で、設定値は module.md と同じです。  
 `"muon"` は、Convの重みをMuon（lr=0.02）で、それ以外（BN、Linear、bias）をAdamW（lr=1e-3）で更新します。そのため、Conv層が1つもないモデルでは使えません。
+
+スケジューラは `build_module_scheduler` に渡す名前で切り替わります。使える名前は `"none"`（学習率を変えない）、`"cosine"`、`"step"`、`"wsd"` で、式は module.md にあります。学習率の大きさは optimizer ごとに決まっていて、スケジューラはそれを epoch ごとに下げていきます。

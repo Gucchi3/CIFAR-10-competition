@@ -1,9 +1,10 @@
 # @file module.py
 # @brief Blocks and optimizers for main.py
 
-from collections.abc import Callable
-from torch           import nn
-from typing          import overload
+from collections.abc          import Callable
+from torch                    import nn
+from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR, LRScheduler, StepLR
+from typing                   import overload
 
 import torch
 
@@ -231,3 +232,64 @@ def build_module_optimizer(name: str, model: nn.Module) -> list[torch.optim.Opti
     if name not in OPTIMIZER_REGISTRY:
         raise ValueError(f"unknown optimizer: {name}. choose from {list(OPTIMIZER_REGISTRY)}")
     return OPTIMIZER_REGISTRY[name](model)
+
+
+def build_module_none_scheduler(optimizers: list[torch.optim.Optimizer], epochs: int) -> list[LRScheduler]:
+    '''
+    #* 学習率を変えない。空のリストを返す。
+    '''
+    
+    return []
+
+
+def build_module_cosine_scheduler(optimizers: list[torch.optim.Optimizer], epochs: int) -> list[LRScheduler]:
+    '''
+    #* 学習率をcosineの形で、最後に0近くまで下げる。
+    '''
+    
+    return [CosineAnnealingLR(opt, T_max=epochs) for opt in optimizers]
+
+
+def build_module_step_scheduler(optimizers: list[torch.optim.Optimizer], epochs: int) -> list[LRScheduler]:
+    '''
+    #* 全体の1/3のepochごとに、学習率を0.1倍にする。
+    '''
+    
+    return [StepLR(opt, step_size=max(1, epochs // 3), gamma=0.1) for opt in optimizers]
+
+
+def build_module_wsd_scheduler(optimizers: list[torch.optim.Optimizer], epochs: int) -> list[LRScheduler]:
+    '''
+    #* 最初の80%は学習率を変えず、最後の20%で0まで直線で下げる。
+    '''
+    
+    # 下げ始めるepoch
+    decay_start = int(epochs * 0.8)
+    
+    # epochごとに、元の学習率にかける倍率を返す
+    def factor(epoch: int) -> float:
+        if epoch < decay_start:
+            return 1.0
+        return max(0.0, (epochs - epoch) / (epochs - decay_start + 1))
+    
+    return [LambdaLR(opt, lr_lambda=factor) for opt in optimizers]
+
+
+SCHEDULER_REGISTRY = {
+    "none"  : build_module_none_scheduler,
+    "cosine": build_module_cosine_scheduler,
+    "step"  : build_module_step_scheduler,
+    "wsd"   : build_module_wsd_scheduler,
+}
+
+
+def build_module_scheduler(name: str, optimizers: list[torch.optim.Optimizer], epochs: int) -> list[LRScheduler]:
+    '''
+    #* 名前からschedulerのリストを作る。optimizer 1つにつき1つ作る。
+    #? main.py から呼ぶ。
+    #! 学習ループでは、1 epochの終わりにリストの全部に step() を呼ぶ。
+    '''
+    
+    if name not in SCHEDULER_REGISTRY:
+        raise ValueError(f"unknown scheduler: {name}. choose from {list(SCHEDULER_REGISTRY)}")
+    return SCHEDULER_REGISTRY[name](optimizers, epochs)

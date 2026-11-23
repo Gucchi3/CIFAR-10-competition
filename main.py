@@ -8,7 +8,7 @@ import os
 import torch
 import torch.nn as nn
 
-from module import ConvNeXtBlock, DConv2d, RBlock, SEBlock, SAttention, WAttention, build_module_optimizer
+from module import ConvNeXtBlock, DConv2d, RBlock, SEBlock, SAttention, WAttention, build_module_optimizer, build_module_scheduler
 
 # 前処理済みデータの保存先
 CACHE_PATH = "./cifar10_train.pt"
@@ -76,6 +76,7 @@ model = nn.Sequential(
 train_epochs = 50
 criterion    = nn.CrossEntropyLoss()
 optimizers   = build_module_optimizer("muon", model)
+schedulers   = build_module_scheduler("none", optimizers, train_epochs)
 
 
 
@@ -113,6 +114,7 @@ for epoch in range(train_epochs):
 
         total_loss += loss.item()
 
+    for sch in schedulers: sch.step()
     avg_loss = total_loss / len(train_loader)
     print(f"epoch {epoch + 1}: loss {avg_loss:.4f}")
 

@@ -461,9 +461,78 @@ adamw_params = [p for p in model.parameters() if p.ndim != 4]
 optimizers   = [Muon(muon_params, lr=0.02), torch.optim.AdamW(adamw_params, lr=1e-3)]
 ```
 
+## 学習率スケジューラ
+
+`build_module_scheduler` に渡す名前で、学習率の変え方を選べます。$\eta_0$ はoptimizerの学習率、$e$ は今のepoch、$E$ は `train_epochs` です。
+
+### 21. None
+- 長所: 一番単純で、結果を比べやすい
+- 短所: 最後まで学習率が大きく、精度が上がりきらないことがある
+
+$$
+\eta_e = \eta_0
+$$
+
+```python
+schedulers = build_module_scheduler(name="none", optimizers=optimizers, epochs=train_epochs)
+```
+
+### 22. Cosine
+- 長所: なめらかに下がり、調整なしでもよく効く
+- 短所: 途中で学習を止めると、学習率が下がりきらない
+
+$$
+\eta_e = \frac{\eta_0}{2}\left(1 + \cos\frac{\pi e}{E}\right)
+$$
+
+```python
+schedulers = build_module_scheduler(name="cosine", optimizers=optimizers, epochs=train_epochs)
+```
+
+```python
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=train_epochs)
+```
+
+### 23. Step
+- 長所: 仕組みが分かりやすい
+- 短所: 学習率が急に変わり、下げる時期の調整が必要
+
+$$
+\eta_e = \eta_0 \cdot 0.1^{\lfloor e \,/\, \lfloor E/3 \rfloor \rfloor}
+$$
+
+```python
+schedulers = build_module_scheduler(name="step", optimizers=optimizers, epochs=train_epochs)
+```
+
+```python
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=train_epochs // 3, gamma=0.1)
+```
+
+### 24. WSD
+- 長所: 大きい学習率で長く学習してから、最後に一気に仕上げられる（ここではWarmupはなし）
+- 短所: 下げ始める時期（ここでは最後の20%）で結果が変わる
+
+$$
+\eta_e = \eta_0 \quad (e < 0.8E)
+$$
+
+$$
+\eta_e = \eta_0 \cdot \frac{E - e}{E - 0.8E + 1} \quad (e \ge 0.8E)
+$$
+
+```python
+schedulers = build_module_scheduler(name="wsd", optimizers=optimizers, epochs=train_epochs)
+```
+
+```python
+decay_start = int(train_epochs * 0.8)
+scheduler   = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda e: 1.0 if e < decay_start else (train_epochs - e) / (train_epochs - decay_start + 1))
+```
+
 ## 損失関数
 
-### 21. Cross Entropy
+### 25. Cross Entropy
 - 長所: 分類の標準で安定している
 - 短所: 自信過剰な予測になりやすい
 
@@ -475,7 +544,7 @@ $$
 criterion = nn.CrossEntropyLoss()
 ```
 
-### 22. Label Smoothing
+### 26. Label Smoothing
 - 長所: 1行で過学習を抑えられる
 - 短所: εを大きくしすぎると精度が落ちる
 
@@ -487,7 +556,7 @@ $$
 criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 ```
 
-### 23. Focal Loss
+### 27. Focal Loss
 - 長所: 間違えやすい画像を重点的に学習できる
 - 短所: 均等なデータ (CIFAR-10) ではあまり効かない
 
@@ -511,7 +580,7 @@ class FocalLoss(nn.Module):
 criterion = FocalLoss(gamma=2.0)
 ```
 
-### 24. Multi-class Hinge Loss
+### 28. Multi-class Hinge Loss
 - 長所: マージンを広げる考え方を学べる
 - 短所: CEより精度が出にくいことが多い
 
