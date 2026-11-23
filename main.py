@@ -15,6 +15,8 @@ CACHE_PATH = "./cifar10_train.pt"
 
 # 実行環境と前処理　※変更禁止
 device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.manual_seed(0)
+torch.cuda.manual_seed_all(0)
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
 
 # Hugging FaceからCIFAR-10を読み込む　※変更禁止
@@ -47,35 +49,24 @@ valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # model
 model = nn.Sequential(
-    nn.Conv2d(3, 32, kernel_size=3, padding=1),
-    nn.BatchNorm2d(32),
+    nn.Conv2d(3, 64, kernel_size=3, padding=1),
+    nn.BatchNorm2d(64),
     nn.ReLU(),
-    DConv2d(32, 32),
-    nn.BatchNorm2d(32),
+    nn.Conv2d(64, 64, kernel_size=3, padding=1),
+    nn.BatchNorm2d(64),
     nn.ReLU(),
-    nn.Dropout2d(0.1),
     nn.MaxPool2d(2),
-    WAttention(32, window_size=4),
-    DConv2d(32, 64),
-    nn.BatchNorm2d(64),
+    SAttention(64),
+    nn.Conv2d(64, 128, kernel_size=3, padding=1),
+    nn.BatchNorm2d(128),
     nn.ReLU(),
-    DConv2d(64, 64),
-    nn.BatchNorm2d(64),
+    SAttention(128),
+    nn.Conv2d(128, 128, kernel_size=3, padding=1),
+    nn.BatchNorm2d(128),
     nn.ReLU(),
-    DConv2d(64, 64),
-    nn.BatchNorm2d(64),
-    nn.ReLU(),
-    nn.Dropout2d(0.1),
     nn.MaxPool2d(2),
-    DConv2d(64, 104),
-    nn.BatchNorm2d(104),
-    nn.ReLU(),
-    DConv2d(104, 104),
-    nn.BatchNorm2d(104),
-    nn.ReLU(),
-    nn.AdaptiveAvgPool2d(1),
     nn.Flatten(),
-    nn.Linear(104, 10),
+    nn.Linear(128 * 8 * 8, 10),
 ).to(device)
 
 

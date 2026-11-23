@@ -1,0 +1,9 @@
+# いったんすべて除外する
+*
+
+# git に上げるものだけ許可する
+!.gitignore
+!README.md
+!main.py
+!module.py
+!module.md

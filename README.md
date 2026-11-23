@@ -17,6 +17,7 @@ AIにおいて、モデル構造は最も重要な要素といっても過言で
 
 ## ルール
 - 検証データにおいて、一番精度の高いチームの勝ち。
+- モデルには、畳み込み、アテンション、活性化関数、プーリングの枠組みの中から、それぞれ最低でも1つを用いること。
 ## 禁止事項
 - 事前学習モデルの使用。
 - 学習データの追加、分割周りの設定変更。
@@ -66,5 +67,5 @@ criterion    = nn.CrossEntropyLoss()
 optimizers   = build_module_optimizer("muon", model)
 ```
 
-オプティマイザは `build_module_optimizer` に渡す名前で切り替わります。使える名前は `"adam"`、`"adamw"`、`"sgd"`、`"muon"` で、設定値は model.md と同じです。  
+オプティマイザは `build_module_optimizer` に渡す名前で切り替わります。使える名前は `"adam"`、`"adamw"`、`"sgd"`、`"muon"` で、設定値は module.md と同じです。  
 `"muon"` は、Convの重みをMuon（lr=0.02）で、それ以外（BN、Linear、bias）をAdamW（lr=1e-3）で更新します。そのため、Conv層が1つもないモデルでは使えません。
