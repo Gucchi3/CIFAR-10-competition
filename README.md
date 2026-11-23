@@ -1,6 +1,18 @@
 # CIFAR-10 コンペティション
 ## 内容
 - CIFAR-10の学習コードを改良して、精度の高さを競います。
+## 環境構築
+次の4つのパッケージが必要です。numpy と Pillow は、これらと一緒に自動で入ります。
+- torch
+- torchvision
+- datasets
+- rich
+
+```bash
+pip install torch torchvision datasets rich
+```
+GPU で学習するときは、CUDA に合った torch を [PyTorch の公式サイト](https://pytorch.org/get-started/locally/) の手順で入れてください。  
+動作を確認した環境: Python 3.14、torch 2.15、torchvision 0.29、datasets 5.2、rich 15.0
 ## 始め方
 ///
 ## 改良箇所
