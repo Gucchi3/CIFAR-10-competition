@@ -178,7 +178,7 @@ class SAttention(nn.Module):
 - 短所: 窓をまたいだ情報が混ざらない
 
 $$
-y = x + \mathrm{merge}\left(\left\{\mathrm{softmax}\left(\frac{Q_w K_w^\top}{\sqrt{d}}\right)V_w\right\}_{w}\right)
+y = x + \mathrm{merge}\left(\left\lbrace \mathrm{softmax}\left(\frac{Q_w K_w^\top}{\sqrt{d}}\right)V_w\right\rbrace_{w}\right)
 $$
 
 ```python
