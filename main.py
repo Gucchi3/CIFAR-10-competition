@@ -14,9 +14,9 @@ from module import ConvNeXtBlock, DConv2d, RBlock, SEBlock, SAttention, WAttenti
 CACHE_PATH = "./cifar10_train.pt"
 
 # 実行環境と前処理　※変更禁止
-device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.manual_seed(0)
-torch.cuda.manual_seed_all(0)
+torch.use_deterministic_algorithms(True)
+device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))])
 
 # Hugging FaceからCIFAR-10を読み込む　※変更禁止
@@ -49,34 +49,42 @@ valid_loader = DataLoader(valid_dataset, batch_size=128, shuffle=False)
 
 # model
 model = nn.Sequential(
-    nn.Conv2d(3, 64, kernel_size=3, padding=1),
+    nn.Conv2d(3, 40, kernel_size=3, padding=1),
+    nn.BatchNorm2d(40),
+    nn.ReLU(),
+    DConv2d(40, 40),
+    nn.BatchNorm2d(40),
+    nn.ReLU(),
+    nn.Dropout2d(0.1),
+    nn.MaxPool2d(2),
+    WAttention(40, window_size=4),
+    DConv2d(40, 64),
     nn.BatchNorm2d(64),
     nn.ReLU(),
-    nn.Conv2d(64, 64, kernel_size=3, padding=1),
+    DConv2d(64, 64),
     nn.BatchNorm2d(64),
     nn.ReLU(),
+    nn.Dropout2d(0.1),
     nn.MaxPool2d(2),
-    SAttention(64),
-    nn.Conv2d(64, 128, kernel_size=3, padding=1),
-    nn.BatchNorm2d(128),
+    DConv2d(64, 112),
+    nn.BatchNorm2d(112),
     nn.ReLU(),
-    SAttention(128),
-    nn.Conv2d(128, 128, kernel_size=3, padding=1),
-    nn.BatchNorm2d(128),
+    DConv2d(112, 112),
+    nn.BatchNorm2d(112),
     nn.ReLU(),
-    nn.MaxPool2d(2),
+    nn.AdaptiveAvgPool2d(1),
     nn.Flatten(),
-    nn.Linear(128 * 8 * 8, 10),
+    nn.Linear(112, 10),
 ).to(device)
 
 
 
 
 # 学習設定
-train_epochs = 50
+train_epochs = 300
 criterion    = nn.CrossEntropyLoss()
 optimizers   = build_module_optimizer("muon", model)
-schedulers   = build_module_scheduler("none", optimizers, train_epochs)
+schedulers   = build_module_scheduler("wsd", optimizers, train_epochs)
 
 
 
