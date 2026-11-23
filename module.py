@@ -68,10 +68,13 @@ class SEBlock(nn.Module):
     
     def __init__(self, channels: int, reduction: int = 4) -> None:
         super().__init__()
+
+        # 中間のチャネル数が0にならないように、最低1にする
+        hidden  = max(1, channels // reduction)
         self.fc = nn.Sequential(
             nn.AdaptiveAvgPool2d(1), nn.Flatten(),
-            nn.Linear(channels, channels // reduction), nn.ReLU(),
-            nn.Linear(channels // reduction, channels), nn.Sigmoid(),
+            nn.Linear(channels, hidden), nn.ReLU(),
+            nn.Linear(hidden, channels), nn.Sigmoid(),
         )
         return None
     
